@@ -1,0 +1,52 @@
+# docker compose up --build            -> rate limiter on :8000, Redis on :6379
+# docker compose --profile monitoring up --build   -> plus Prometheus on :9090
+services:
+  redis:
+    image: redis:7-alpine
+    # Rate limit state is disposable: no persistence, and when memory runs out evict keys that are
+    # closest to expiring (every key we write has a TTL) instead of refusing writes.
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "256mb", "--maxmemory-policy", "volatile-ttl"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 2s
+      retries: 10
+
+  rate-limiter:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      STORAGE_BACKEND: redis
+      REDIS_URL: redis://redis:6379/0
+      DEFAULT_ALGORITHM: ${DEFAULT_ALGORITHM:-token_bucket}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      FAIL_OPEN: ${FAIL_OPEN:-true}
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-1} # uvicorn worker processes
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Benchmarks, run from inside the compose network (see benchmarks/Dockerfile):
+  #   docker compose --profile bench run --rm bench
+  bench:
+    build:
+      context: .
+      dockerfile: benchmarks/Dockerfile
+    profiles: ["bench"]
+    depends_on:
+      rate-limiter:
+        condition: service_healthy
+
+  prometheus:
+    build:
+      context: ./deploy
+      dockerfile: Dockerfile.prometheus
+    profiles: ["monitoring"]
+    ports:
+      - "9090:9090"
+    depends_on:
+      - rate-limiter

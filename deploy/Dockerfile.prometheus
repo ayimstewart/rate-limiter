@@ -1,0 +1,4 @@
+# Prometheus with this project's scrape config baked in: no bind mount, so it behaves the same
+# on Linux, macOS, Windows and SELinux hosts.
+FROM prom/prometheus:v2.55.1
+COPY prometheus.yml /etc/prometheus/prometheus.yml
