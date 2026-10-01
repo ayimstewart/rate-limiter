@@ -1,0 +1,22 @@
+# docker compose --profile bench run --rm bench locust -f benchmarks/locustfile.py \n#     --headless -u 1000 -r 100 -t 70s --reset-stats --host http://rate-limiter:8000
+# (1000 users ramped at 100/s; --reset-stats discards the ~10 s ramp, so the numbers below are the 60 s steady state)
+
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+POST     POST /check [fixed_window]                                                     15229     0(0.00%) |      4       1     210      3 |  250.86        0.00
+POST     POST /check [leaky_bucket]                                                     15209     0(0.00%) |      4       1     215      3 |  250.53        0.00
+POST     POST /check [sliding_window]                                                   15060     0(0.00%) |      4       1     212      3 |  248.08        0.00
+POST     POST /check [token_bucket]                                                     15026     0(0.00%) |      4       1     204      3 |  247.52        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                     60524     0(0.00%) |      4       1     215      3 |  996.99        0.00
+
+Response time percentiles (approximated)
+Type     Name                                                                                  50%    66%    75%    80%    90%    95%    98%    99%  99.9% 99.99%   100% # reqs
+--------|--------------------------------------------------------------------------------|--------|------|------|------|------|------|------|------|------|------|------|------
+POST     POST /check [fixed_window]                                                              3      3      4      4      6     10     17     31     91    200    210  15229
+POST     POST /check [leaky_bucket]                                                              3      3      4      4      6     10     18     34    140    210    220  15209
+POST     POST /check [sliding_window]                                                            3      3      4      5      7     10     18     35    170    210    210  15060
+POST     POST /check [token_bucket]                                                              3      3      4      4      6      9     17     30     90    190    200  15026
+--------|--------------------------------------------------------------------------------|--------|------|------|------|------|------|------|------|------|------|------|------
+         Aggregated                                                                              3      3      4      4      6     10     18     33    140    210    220  60524
+

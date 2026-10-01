@@ -1,0 +1,19 @@
+$ docker compose up --build -d      # (build output trimmed)
+Container rate-limiter-rate-limiter-1 Running 
+Container rate-limiter-redis-1 Healthy 
+Container rate-limiter-redis-1 Running 
+
+$ docker compose ps
+SERVICE        STATUS
+rate-limiter   Up 2 minutes (healthy)
+redis          Up 40 minutes (healthy)
+
+$ curl -s localhost:8000/health
+{"status":"ok","storage":"redis","redis":"connected"}
+
+$ for i in 1 2 3 4; do curl -s -X POST localhost:8000/check -H 'content-type: application/json' \
+    -d '{"key":"user:123","algorithm":"token_bucket","limit":3,"window":60}'; echo; done
+{"allowed":true,"remaining":1,"reset_at":1790818695,"limit":3,"algorithm":"token_bucket","retry_after":0.0,"degraded":false}
+{"allowed":true,"remaining":0,"reset_at":1790818715,"limit":3,"algorithm":"token_bucket","retry_after":0.0,"degraded":false}
+{"allowed":false,"remaining":0,"reset_at":1790818715,"limit":3,"algorithm":"token_bucket","retry_after":16.335,"degraded":false}
+{"allowed":false,"remaining":0,"reset_at":1790818715,"limit":3,"algorithm":"token_bucket","retry_after":16.249,"degraded":false}

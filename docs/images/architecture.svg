@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1060 580" role="img" aria-labelledby="t d" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif">
+  <title id="t">Rate limiter architecture</title>
+  <desc id="d">Clients call the FastAPI rate limiter service. Inside, endpoints and a middleware use a decision service that picks one of four algorithms, which run on either in-memory storage or Redis storage. Redis executes Lua scripts atomically and is shared by all service instances. Prometheus scrapes the metrics endpoint.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4a5565"/>
+    </marker>
+  </defs>
+  <rect width="1060" height="580" fill="#ffffff"/>
+
+  <!-- extra instances hinting at horizontal scale -->
+  <rect x="304" y="36" width="520" height="500" rx="14" fill="#f4f7fb" stroke="#c5d3e6" stroke-dasharray="5 4"/>
+  <rect x="292" y="48" width="520" height="500" rx="14" fill="#f4f7fb" stroke="#c5d3e6" stroke-dasharray="5 4"/>
+
+  <!-- service -->
+  <rect x="280" y="60" width="520" height="500" rx="14" fill="#f9fbfe" stroke="#3b6fb6" stroke-width="2"/>
+  <text x="300" y="86" font-size="15" font-weight="700" fill="#1f3f73">Rate limiter service (FastAPI) &#215; N instances</text>
+
+  <!-- endpoints + middleware -->
+  <g font-size="13" text-anchor="middle" fill="#222b36">
+    <rect x="300" y="100" width="150" height="36" rx="8" fill="#ffffff" stroke="#8aa4c8"/>
+    <text x="375" y="123" font-family="Consolas, 'Courier New', monospace">POST /check</text>
+    <rect x="460" y="100" width="150" height="36" rx="8" fill="#ffffff" stroke="#8aa4c8"/>
+    <text x="535" y="123" font-family="Consolas, 'Courier New', monospace">GET /metrics</text>
+    <rect x="620" y="100" width="150" height="36" rx="8" fill="#ffffff" stroke="#8aa4c8"/>
+    <text x="695" y="123" font-family="Consolas, 'Courier New', monospace">GET /health</text>
+
+    <rect x="300" y="148" width="470" height="36" rx="8" fill="#ffffff" stroke="#8aa4c8"/>
+    <text x="535" y="171">RateLimitMiddleware  <tspan fill="#5b6675">(embed in any FastAPI / Starlette app)</tspan></text>
+  </g>
+
+  <!-- decision service -->
+  <g font-size="13" text-anchor="middle" fill="#222b36">
+    <rect x="300" y="208" width="470" height="56" rx="8" fill="#e8f0fb" stroke="#3b6fb6"/>
+    <text x="535" y="231" font-weight="700">RateLimitService</text>
+    <text x="535" y="251" fill="#3d4757" font-size="12">algorithm routing &#183; Prometheus metrics &#183; fail-open / fail-closed policy</text>
+  </g>
+
+  <!-- algorithms -->
+  <text x="300" y="283" font-size="12" font-weight="700" fill="#5b6675">ALGORITHMS  &#8212;  RateLimiter.check(key, limit, window)</text>
+  <g font-size="12.5" text-anchor="middle" fill="#222b36">
+    <rect x="300" y="299" width="112" height="46" rx="8" fill="#fff6e3" stroke="#d99b1e"/>
+    <text x="356" y="319" font-weight="700">Token</text><text x="356" y="335">bucket</text>
+    <rect x="422" y="299" width="112" height="46" rx="8" fill="#fff6e3" stroke="#d99b1e"/>
+    <text x="478" y="319" font-weight="700">Sliding</text><text x="478" y="335">window log</text>
+    <rect x="544" y="299" width="112" height="46" rx="8" fill="#fff6e3" stroke="#d99b1e"/>
+    <text x="600" y="319" font-weight="700">Fixed</text><text x="600" y="335">window</text>
+    <rect x="666" y="299" width="104" height="46" rx="8" fill="#fff6e3" stroke="#d99b1e"/>
+    <text x="718" y="319" font-weight="700">Leaky</text><text x="718" y="335">bucket</text>
+  </g>
+
+  <!-- brackets: the service may use any one of the four, and each runs on the storage interface -->
+  <g stroke="#8a94a3" stroke-width="1.3" fill="none">
+    <path d="M356,299 L356,291 L718,291 L718,299 M478,291 L478,299 M600,291 L600,299"/>
+    <path d="M356,345 L356,357 L718,357 L718,345 M478,345 L478,357 M600,345 L600,357"/>
+  </g>
+
+  <!-- storage interface -->
+  <g font-size="13" text-anchor="middle" fill="#222b36">
+    <rect x="300" y="368" width="470" height="40" rx="8" fill="#eef7ee" stroke="#4c9a4c"/>
+    <text x="535" y="385" font-weight="700">Storage interface</text>
+    <text x="535" y="401" font-size="11.5" fill="#3d4757" font-family="Consolas, 'Courier New', monospace">get &#183; set &#183; delete &#183; atomic_update &#183; run_script</text>
+  </g>
+
+  <!-- backends -->
+  <g font-size="12.5" text-anchor="middle" fill="#222b36">
+    <rect x="300" y="436" width="225" height="104" rx="10" fill="#ffffff" stroke="#4c9a4c"/>
+    <text x="412" y="458" font-weight="700" font-size="13.5">MemoryStorage</text>
+    <text x="412" y="480" fill="#3d4757">dict with TTLs + sweeper</text>
+    <text x="412" y="498" fill="#3d4757">one asyncio.Lock per key</text>
+    <text x="412" y="520" fill="#a0521d" font-size="11.5">single instance only</text>
+
+    <rect x="545" y="436" width="225" height="104" rx="10" fill="#ffffff" stroke="#4c9a4c"/>
+    <text x="657" y="458" font-weight="700" font-size="13.5">RedisStorage</text>
+    <text x="657" y="480" fill="#3d4757">atomic Lua via EVALSHA</text>
+    <text x="657" y="498" fill="#3d4757">clock = Redis server TIME</text>
+    <text x="657" y="520" fill="#1f6b3a" font-size="11.5">shared by every instance</text>
+  </g>
+
+  <!-- flow arrows inside the service (the first sits right of the ALGORITHMS caption) -->
+  <g stroke="#4a5565" stroke-width="1.5" fill="none" marker-end="url(#arrow)">
+    <path d="M535,184 L535,206"/>
+    <path d="M700,264 L700,291"/>
+    <path d="M537,357 L537,366"/>
+    <path d="M412,408 L412,434"/>
+    <path d="M657,408 L657,434"/>
+  </g>
+
+  <!-- clients: one request arrow in, one answer arrow out -->
+  <g font-size="13" text-anchor="middle" fill="#222b36">
+    <rect x="20" y="236" width="130" height="116" rx="12" fill="#ffffff" stroke="#8a94a3" stroke-width="1.5"/>
+    <text x="85" y="266" font-weight="700" font-size="14">Clients</text>
+    <text x="85" y="290" fill="#3d4757">API gateway</text>
+    <text x="85" y="308" fill="#3d4757">web apps</text>
+    <text x="85" y="326" fill="#3d4757">other services</text>
+  </g>
+  <g stroke="#4a5565" stroke-width="1.6" fill="none" marker-end="url(#arrow)">
+    <path d="M152,276 L276,276"/>
+    <path d="M276,314 L152,314"/>
+  </g>
+  <g font-size="11.5" fill="#3d4757" text-anchor="middle">
+    <text x="214" y="268" font-family="Consolas, 'Courier New', monospace">POST /check</text>
+    <text x="214" y="332">allowed, remaining,</text>
+    <text x="214" y="346">reset_at</text>
+  </g>
+
+  <!-- Prometheus -->
+  <g font-size="13" text-anchor="middle" fill="#222b36">
+    <rect x="910" y="100" width="124" height="60" rx="10" fill="#ffffff" stroke="#c4552b" stroke-width="1.5"/>
+    <text x="972" y="126" font-weight="700">Prometheus</text>
+    <text x="972" y="145" fill="#3d4757" font-size="11.5">scrapes /metrics</text>
+  </g>
+  <path d="M908,118 L802,118" stroke="#4a5565" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+
+  <!-- Redis -->
+  <g font-size="13" text-anchor="middle" fill="#222b36">
+    <path d="M910,430 v84 a62,14 0 0 0 124,0 v-84" fill="#fdecea" stroke="#c0392b" stroke-width="1.5"/>
+    <ellipse cx="972" cy="430" rx="62" ry="14" fill="#fbd5d0" stroke="#c0392b" stroke-width="1.5"/>
+    <text x="972" y="468" font-weight="700" font-size="14">Redis</text>
+    <text x="972" y="486" fill="#3d4757" font-size="11.5">Lua scripts &#183; TTL keys</text>
+  </g>
+  <path d="M772,488 L908,488" stroke="#4a5565" stroke-width="1.5" fill="none" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <text x="858" y="480" font-size="11.5" fill="#3d4757" text-anchor="middle" font-family="Consolas, 'Courier New', monospace">EVALSHA</text>
+
+  <text x="530" y="574" font-size="11.5" fill="#5b6675" text-anchor="middle">Every instance asks the same Redis, so N instances enforce one shared limit. Set STORAGE_BACKEND=memory for a single process with no dependencies.</text>
+</svg>

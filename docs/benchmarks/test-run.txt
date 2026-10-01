@@ -1,0 +1,31 @@
+$ TEST_REDIS_URL=redis://127.0.0.1:6379/15 pytest tests --cov=src -q
+........................................................................ [ 23%]
+........................................................................ [ 47%]
+........................................................................ [ 71%]
+........................................................................ [ 95%]
+.............                                                            [100%]
+=============================== tests coverage ================================
+______________ coverage: platform win32, python 3.12.10-final-0 _______________
+Name                               Stmts   Miss  Cover
+------------------------------------------------------
+src\__init__.py                        0      0   100%
+src\algorithms\__init__.py            12      0   100%
+src\algorithms\base.py                53      0   100%
+src\algorithms\fixed_window.py        17      0   100%
+src\algorithms\leaky_bucket.py        23      0   100%
+src\algorithms\sliding_window.py      18      0   100%
+src\algorithms\token_bucket.py        21      0   100%
+src\clock.py                          19      0   100%
+src\config.py                         21      0   100%
+src\main.py                           56      0   100%
+src\metrics.py                        28      0   100%
+src\middleware.py                     59      0   100%
+src\models.py                         28      0   100%
+src\service.py                        60      0   100%
+src\storage\__init__.py                4      0   100%
+src\storage\base.py                   24      0   100%
+src\storage\memory.py                 86      0   100%
+src\storage\redis.py                 105      0   100%
+------------------------------------------------------
+TOTAL                                634      0   100%
+301 passed in 22.93s

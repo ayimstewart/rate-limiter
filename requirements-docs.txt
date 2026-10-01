@@ -1,0 +1,4 @@
+# Only needed to regenerate docs/images (docs/generate_figures.py, docs/generate_screenshots.py).
+-r requirements.txt
+matplotlib>=3.8
+playwright>=1.45   # drives the Edge/Chrome you already have: no browser download needed
